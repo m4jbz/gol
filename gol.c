@@ -6,7 +6,6 @@
 
 #define WIDTH 800
 #define HEIGHT 600
-
 #define NC_W 200
 #define NC_H 150
 
@@ -31,17 +30,17 @@ int get_random_value(int max)
     return random() % max+1;
 }
 
-cell change_status(cell c)
+void change_status(cell grid[NC_W][NC_H], int x, int y, int new_status)
 {
-    if (c.status == 1) {
-        c.status = 0;
-        c.color = BLACK;
-    } else {
-        c.status = 1;
-        c.color = WHITE;
+    if (new_status == 1) {
+        grid[x][y].color = WHITE;
+        grid[x][y].status = 1;
     }
 
-    return c;
+    if (new_status == 0) {
+        grid[x][y].color = BLACK;
+        grid[x][y].status = 0;
+    }
 }
 
 int get_neighbours(cell grid[NC_W][NC_H], int x, int  y)
@@ -70,19 +69,15 @@ void next_generation()
             int neighbors = get_neighbours(current_gen, i, j);
             if (current_gen[i][j].status == 1) {
                 if (neighbors < 2 || neighbors > 3) {
-                    next_gen[i][j].status = 0;
-                    next_gen[i][j].color = BLACK;
+                    change_status(next_gen, i, j, 0);
                 } else {
-                    next_gen[i][j].status = 1;
-                    next_gen[i][j].color = WHITE;
+                    change_status(next_gen, i, j, 1);
                 }
             } else {
                 if (neighbors == 3) {
-                    next_gen[i][j].status = 1;
-                    next_gen[i][j].color = WHITE;
+                    change_status(next_gen, i, j, 1);
                 } else {
-                    next_gen[i][j].status = 0;
-                    next_gen[i][j].color = BLACK;
+                    change_status(next_gen, i, j, 0);
                 }
             }
         }
@@ -117,7 +112,7 @@ int main()
 {
     srandom(time(NULL));
 
-    // INIT ALL current_gen AS DEAD
+    // INIT ALL CURRENT_GEN AND NEXT_GEN AS DEAD
     for (int i = 0; i < NC_W; ++i) {
         for (int j = 0; j < NC_H; ++j) {
             current_gen[i][j] = init_cell(i, j);
@@ -125,18 +120,16 @@ int main()
         }
     }
 
-    // PSEUDO-RANDOM POSITIONS FOR ALIVE current_gen
-    /*
-    for (int i = 0; i < 200; ++i) {
+    // PSEUDO-RANDOM POSITIONS FOR ALIVE CURRENT_GEN
+    for (int i = 0; i < 500; ++i) {
         int x = 75 + get_random_value(50);
         int y = 56 + get_random_value(37);
 
-        current_gen[x][y] = change_status(current_gen[x][y]);
+        change_status(current_gen, x, y, 1);
     }
-    */
 
     // INITIALIZE ALIVE CELLS AS DESIRED
-    init_alive_current_gen();
+    // init_alive_current_gen();
 
     // DRAWING BEGINS
     InitWindow(WIDTH, HEIGHT, "Conway's Game of Life");
@@ -163,11 +156,9 @@ int main()
         DrawFPS(10, 10);
 
         // SCREENSHOT SECTION FOR MAKING GIFS WITH FFMPEG
-        /*
         char filename[64];
-        snprintf(filename, 64, "frame%03d.png", frame_counter++); // Name frames sequentially
+        snprintf(filename, 64, "frames/frame%03d.png", frame_counter++); // Name frames sequentially
         TakeScreenshot(filename);
-        */
         
         EndDrawing();
     }
