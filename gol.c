@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <raylib.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #define WIDTH 800
@@ -17,7 +18,8 @@ typedef struct {
     int status;
 } cell;
 
-cell cells[NC_W][NC_H];
+cell current_gen[NC_W][NC_H];
+cell next_gen[NC_W][NC_H];
 
 cell init_cell(int x, int y)
 {
@@ -42,7 +44,7 @@ cell change_status(cell c)
     return c;
 }
 
-int get_neighbours(int x, int  y)
+int get_neighbours(cell grid[NC_W][NC_H], int x, int  y)
 {
     int counter = 0;
 
@@ -52,7 +54,7 @@ int get_neighbours(int x, int  y)
                 continue;
             }
             
-            if (cells[x+i][y+j].status == 1) {
+            if (grid[x+i][y+j].status == 1) {
                 counter++;
             }
         }
@@ -61,65 +63,112 @@ int get_neighbours(int x, int  y)
     return counter;
 }
 
-cell check_around(cell c, int x, int y)
+void next_generation()
 {
-    if (cells[x][y].status == 0) {
-        int counter = get_neighbours(x, y);
-
-        if (counter == 3) {
-            c.status = 1;
-            c.color = WHITE;
-        }
-    } else {
-        int counter = get_neighbours(x, y);
-
-        if (counter < 2 || counter > 3) {
-            c.status = 0;
-            c.color = BLACK;
+    for (int i = 0; i < NC_W; i++) {
+        for (int j = 0; j < NC_H; j++) {
+            int neighbors = get_neighbours(current_gen, i, j);
+            if (current_gen[i][j].status == 1) {
+                if (neighbors < 2 || neighbors > 3) {
+                    next_gen[i][j].status = 0;
+                    next_gen[i][j].color = BLACK;
+                } else {
+                    next_gen[i][j].status = 1;
+                    next_gen[i][j].color = WHITE;
+                }
+            } else {
+                if (neighbors == 3) {
+                    next_gen[i][j].status = 1;
+                    next_gen[i][j].color = WHITE;
+                } else {
+                    next_gen[i][j].status = 0;
+                    next_gen[i][j].color = BLACK;
+                }
+            }
         }
     }
+}
 
-    return c;
+void init_alive_current_gen()
+{
+    current_gen[99][74].color = WHITE;
+    current_gen[99][74].status = 1;
+
+    current_gen[100][74].color = WHITE;
+    current_gen[100][74].status = 1;
+
+    current_gen[101][74].color = WHITE;
+    current_gen[101][74].status = 1;
+
+    current_gen[99][75].color = WHITE;
+    current_gen[99][75].status = 1;
+
+    current_gen[101][75].color = WHITE;
+    current_gen[101][75].status = 1;
+
+    current_gen[99][76].color = WHITE;
+    current_gen[99][76].status = 1;
+
+    current_gen[101][76].color = WHITE;
+    current_gen[101][76].status = 1;
 }
 
 int main()
 {
     srandom(time(NULL));
 
-    // INIT ALL CELLS AS DEAD
+    // INIT ALL current_gen AS DEAD
     for (int i = 0; i < NC_W; ++i) {
         for (int j = 0; j < NC_H; ++j) {
-            cells[i][j] = init_cell(i, j);
+            current_gen[i][j] = init_cell(i, j);
+            next_gen[i][j] = init_cell(i, j);
         }
     }
 
-    // PSEUDO-RANDOM POSITIONS FOR ALIVE CELLS
+    // PSEUDO-RANDOM POSITIONS FOR ALIVE current_gen
+    /*
     for (int i = 0; i < 200; ++i) {
         int x = 75 + get_random_value(50);
         int y = 56 + get_random_value(37);
 
-        cells[x][y] = change_status(cells[x][y]);
+        current_gen[x][y] = change_status(current_gen[x][y]);
     }
+    */
+
+    // INITIALIZE ALIVE CELLS AS DESIRED
+    init_alive_current_gen();
 
     // DRAWING BEGINS
     InitWindow(WIDTH, HEIGHT, "Conway's Game of Life");
     SetTargetFPS(60);
 
+    int frame_counter = 0;
+
     while (!WindowShouldClose()) {
         BeginDrawing();
 
-        ClearBackground(RED);
+        ClearBackground(BLACK);
 
-        // CELLS DRAWING
-        for (int i = 0; i < NC_W; ++i) {
-            for (int j = 0; j < NC_H; ++j) {
-                cells[i][j] = check_around(cells[i][j], i, j);
-                DrawRectangleV(cells[i][j].pos, SIZE, cells[i][j].color);
+        // CURRENT_GEN DRAWING
+        for (int i = 0; i < NC_W; i++) {
+            for (int j = 0; j < NC_H; j++) {
+                DrawRectangleV(current_gen[i][j].pos, SIZE, current_gen[i][j].color);
             }
         }
 
+        // UPDATE CURRENT_GEN
+        next_generation();
+        memcpy(current_gen, next_gen, sizeof(current_gen));
+
         DrawFPS(10, 10);
 
+        // SCREENSHOT SECTION FOR MAKING GIFS WITH FFMPEG
+        /*
+        char filename[64];
+        snprintf(filename, 64, "frame%03d.png", frame_counter++); // Name frames sequentially
+        TakeScreenshot(filename);
+        */
+        
         EndDrawing();
     }
 
