@@ -84,30 +84,6 @@ void next_generation()
     }
 }
 
-void init_alive_current_gen()
-{
-    current_gen[99][74].color = WHITE;
-    current_gen[99][74].status = 1;
-
-    current_gen[100][74].color = WHITE;
-    current_gen[100][74].status = 1;
-
-    current_gen[101][74].color = WHITE;
-    current_gen[101][74].status = 1;
-
-    current_gen[99][75].color = WHITE;
-    current_gen[99][75].status = 1;
-
-    current_gen[101][75].color = WHITE;
-    current_gen[101][75].status = 1;
-
-    current_gen[99][76].color = WHITE;
-    current_gen[99][76].status = 1;
-
-    current_gen[101][76].color = WHITE;
-    current_gen[101][76].status = 1;
-}
-
 int main()
 {
     srandom(time(NULL));
@@ -121,48 +97,87 @@ int main()
     }
 
     // PSEUDO-RANDOM POSITIONS FOR ALIVE CURRENT_GEN
+    /*
     for (int i = 0; i < 500; ++i) {
         int x = 75 + get_random_value(50);
         int y = 56 + get_random_value(37);
 
         change_status(current_gen, x, y, 1);
     }
-
-    // INITIALIZE ALIVE CELLS AS DESIRED
-    // init_alive_current_gen();
+    */
 
     // DRAWING BEGINS
     InitWindow(WIDTH, HEIGHT, "Conway's Game of Life");
-    SetTargetFPS(60);
+    SetTargetFPS(20);
 
     int frame_counter = 0;
+    int enter_was_pressed = 0;
+
+    Camera2D camera = { 0 };
+    camera.target = (Vector2){ WIDTH / 2.0f, HEIGHT / 2.0f };
+    camera.offset = (Vector2){ WIDTH / 2.0f, HEIGHT / 2.0f };
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
 
     while (!WindowShouldClose()) {
-        BeginDrawing();
+        // ZOOM CONTROL
+        if (GetMouseWheelMove() != 0) {
+            Vector2 mouseWorldPos = GetScreenToWorld2D(GetMousePosition(), camera);
+            
+            // UPDATE CAMERA ZOOM (CLAMPING ZOOM VALUE)
+            camera.zoom += (GetMouseWheelMove() * 0.5f);
+            if (camera.zoom < 0.1f) camera.zoom = 0.1f;
+            if (camera.zoom > 5.0f) camera.zoom = 5.0f;
 
+            // GET THE NEW WORLD POINT UNDER MOUSE AFTER ZOOM
+            Vector2 mouseWorldPosNew = GetScreenToWorld2D(GetMousePosition(), camera);
+
+            // UPDATE CAMERA TARGET TO ZOOM INTO MOUSE POSITION
+            camera.target = (Vector2){
+                camera.target.x + (mouseWorldPos.x - mouseWorldPosNew.x),
+                camera.target.y + (mouseWorldPos.y - mouseWorldPosNew.y)
+            };
+        }
+
+        // Update the grid
+        if (IsKeyPressed(KEY_ENTER)) {
+            enter_was_pressed = 1;
+        }
+
+        if (enter_was_pressed) {
+            next_generation();
+            memcpy(current_gen, next_gen, sizeof(current_gen));
+        }
+
+        BeginDrawing();
         ClearBackground(BLACK);
 
-        // CURRENT_GEN DRAWING
+        BeginMode2D(camera);
+
+        // Draw the cells
         for (int i = 0; i < NC_W; i++) {
             for (int j = 0; j < NC_H; j++) {
                 DrawRectangleV(current_gen[i][j].pos, SIZE, current_gen[i][j].color);
             }
         }
 
-        // UPDATE CURRENT_GEN
-        next_generation();
-        memcpy(current_gen, next_gen, sizeof(current_gen));
+        // Mouse interaction
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), camera);
+            int gridX = (int)(mousePos.x / 4);
+            int gridY = (int)(mousePos.y / 4);
+
+            if (gridX >= 0 && gridX < NC_W && gridY >= 0 && gridY < NC_H) {
+                change_status(current_gen, gridX, gridY, 1);
+            }
+        }
+
+        EndMode2D();
 
         DrawFPS(10, 10);
-
-        // SCREENSHOT SECTION FOR MAKING GIFS WITH FFMPEG
-        char filename[64];
-        snprintf(filename, 64, "frames/frame%03d.png", frame_counter++); // Name frames sequentially
-        TakeScreenshot(filename);
-        
         EndDrawing();
     }
-
+    
     CloseWindow();
     // DRAWING ENDS
 
