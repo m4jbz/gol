@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <raylib.h>
 #include <stdlib.h>
@@ -6,10 +7,10 @@
 
 #define WIDTH 800
 #define HEIGHT 600
-#define NC_W 200
-#define NC_H 150
+#define NC_W 800
+#define NC_H 600
 
-#define SIZE (Vector2) {4.0f, 4.0f}
+#define SIZE (Vector2) {1.0f, 1.0f}
 
 typedef struct {
     Vector2 pos;
@@ -22,7 +23,7 @@ cell next_gen[NC_W][NC_H];
 
 cell init_cell(int x, int y)
 {
-    return (cell) { (Vector2) {x*4.0f, y*4.0f}, BLACK, 0 };
+    return (cell) { (Vector2) {x*1.0f, y*1.0f}, BLACK, 0 };
 }
 
 int get_random_value(int max)
@@ -84,6 +85,28 @@ void next_generation()
     }
 }
 
+void random_setup() 
+{
+    for (int i = 0; i < 500; ++i) {
+        int x = 350 + get_random_value(100);
+        int y = 262 + get_random_value(75);
+
+        change_status(current_gen, x, y, 1);
+    }
+}
+
+void draw_text_box()
+{
+    DrawRectangle( 10, 10, 250, 113, Fade(SKYBLUE, 0.5f));
+    DrawRectangleLines( 10, 10, 250, 113, RAYWHITE);
+
+    DrawText("Modes:", 20, 20, 10, WHITE);
+    DrawText("- R to Make a Random Setup", 40, 40, 10, LIGHTGRAY);
+    DrawText("- LEFT_MOUSE to Create Your Own Setup", 40, 60, 10, LIGHTGRAY);
+    DrawText("  And then Press Enter", 40, 80, 10, LIGHTGRAY);
+    DrawText("- MOUSE_WHEEL to Zoom In or Out", 40, 100, 10, LIGHTGRAY);
+}
+
 int main()
 {
     srandom(time(NULL));
@@ -98,26 +121,21 @@ int main()
 
     // PSEUDO-RANDOM POSITIONS FOR ALIVE CURRENT_GEN
     /*
-    for (int i = 0; i < 500; ++i) {
-        int x = 75 + get_random_value(50);
-        int y = 56 + get_random_value(37);
-
-        change_status(current_gen, x, y, 1);
-    }
     */
 
     // DRAWING BEGINS
     InitWindow(WIDTH, HEIGHT, "Conway's Game of Life");
-    SetTargetFPS(20);
+    SetTargetFPS(144);
 
     int frame_counter = 0;
     int enter_was_pressed = 0;
+    int r_was_pressed = 0;
 
     Camera2D camera = { 0 };
     camera.target = (Vector2){ WIDTH / 2.0f, HEIGHT / 2.0f };
     camera.offset = (Vector2){ WIDTH / 2.0f, HEIGHT / 2.0f };
     camera.rotation = 0.0f;
-    camera.zoom = 1.0f;
+    camera.zoom = 8.0f;
 
     while (!WindowShouldClose()) {
         // ZOOM CONTROL
@@ -140,13 +158,18 @@ int main()
         }
 
         // Update the grid
-        if (IsKeyPressed(KEY_ENTER)) {
+        if (IsKeyPressed(KEY_ENTER) && !enter_was_pressed) {
             enter_was_pressed = 1;
         }
 
         if (enter_was_pressed) {
             next_generation();
             memcpy(current_gen, next_gen, sizeof(current_gen));
+        }
+
+        if (IsKeyPressed(KEY_R) && !r_was_pressed) {
+            r_was_pressed = 1;
+            random_setup();
         }
 
         BeginDrawing();
@@ -164,17 +187,23 @@ int main()
         // Mouse interaction
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), camera);
-            int gridX = (int)(mousePos.x / 4);
-            int gridY = (int)(mousePos.y / 4);
+            int gridX = (int)(mousePos.x);
+            int gridY = (int)(mousePos.y);
 
             if (gridX >= 0 && gridX < NC_W && gridY >= 0 && gridY < NC_H) {
                 change_status(current_gen, gridX, gridY, 1);
             }
         }
-
         EndMode2D();
 
-        DrawFPS(10, 10);
+        if (!enter_was_pressed) {
+            draw_text_box();
+        }
+
+        if (enter_was_pressed) {
+            DrawFPS(10, 10);
+        }
+
         EndDrawing();
     }
     
