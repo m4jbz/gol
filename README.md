@@ -17,6 +17,5 @@ make gol
 
 **Note**
 
-*This algorithm is VERY bad, is really slow and is clearly not the best for this. So, low fps are a normal thing.*
-
+*This algorithm is VERY bad, is really slow and is clearly not the best for this. So make the low fps are a normal thing.*
 *I'm gonna add the hashlife algorithm later.*

@@ -1,16 +1,15 @@
-#include <math.h>
 #include <stdio.h>
 #include <raylib.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#define WIDTH 800
-#define HEIGHT 600
-#define NC_W 800
-#define NC_H 600
+#define WIDTH 1000
+#define HEIGHT 700
+#define NC_W 250
+#define NC_H 175
 
-#define SIZE (Vector2) {1.0f, 1.0f}
+#define SIZE (Vector2) {4.0f, 4.0f}
 
 typedef struct {
     Vector2 pos;
@@ -23,7 +22,7 @@ cell next_gen[NC_W][NC_H];
 
 cell init_cell(int x, int y)
 {
-    return (cell) { (Vector2) {x*1.0f, y*1.0f}, BLACK, 0 };
+    return (cell) { (Vector2) {x*4.0f, y*4.0f}, BLACK, 0 };
 }
 
 int get_random_value(int max)
@@ -88,8 +87,8 @@ void next_generation()
 void random_setup() 
 {
     for (int i = 0; i < 500; ++i) {
-        int x = 350 + get_random_value(100);
-        int y = 262 + get_random_value(75);
+        int x = 100 + get_random_value(50);
+        int y = 70 + get_random_value(35);
 
         change_status(current_gen, x, y, 1);
     }
@@ -125,7 +124,7 @@ int main()
 
     // DRAWING BEGINS
     InitWindow(WIDTH, HEIGHT, "Conway's Game of Life");
-    SetTargetFPS(144);
+    SetTargetFPS(20);
 
     int frame_counter = 0;
     int enter_was_pressed = 0;
@@ -135,7 +134,7 @@ int main()
     camera.target = (Vector2){ WIDTH / 2.0f, HEIGHT / 2.0f };
     camera.offset = (Vector2){ WIDTH / 2.0f, HEIGHT / 2.0f };
     camera.rotation = 0.0f;
-    camera.zoom = 8.0f;
+    camera.zoom = 2.0f;
 
     while (!WindowShouldClose()) {
         // ZOOM CONTROL
@@ -187,8 +186,8 @@ int main()
         // Mouse interaction
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             Vector2 mousePos = GetScreenToWorld2D(GetMousePosition(), camera);
-            int gridX = (int)(mousePos.x);
-            int gridY = (int)(mousePos.y);
+            int gridX = (int)(mousePos.x / 4.0f);
+            int gridY = (int)(mousePos.y / 4.0f);
 
             if (gridX >= 0 && gridX < NC_W && gridY >= 0 && gridY < NC_H) {
                 change_status(current_gen, gridX, gridY, 1);
